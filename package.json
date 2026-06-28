@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
+    "@supabase/supabase-js": "^2.45.4",
   },
   "dependencies": {
     "@upstash/redis": "^1.38.0",
