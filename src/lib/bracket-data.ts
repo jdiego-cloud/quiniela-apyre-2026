@@ -38,9 +38,9 @@ export const ROUND32: Round32Match[] = [
 ];
 
 export const ROUND16: DependentMatch[] = [
-  { id: "m89", date: "09 jul", from: ["m74", "m73"] },
-  { id: "m90", date: "04 jul", from: ["m76", "m75"] },
-  { id: "m91", date: "05 jul", from: ["m77", "m78"] },
+  { id: "m89", date: "09 jul", from: ["m74", "m77"] },
+  { id: "m90", date: "04 jul", from: ["m73", "m75"] },
+  { id: "m91", date: "05 jul", from: ["m76", "m78"] },
   { id: "m92", date: "05/06 jul", from: ["m79", "m80"] },
   { id: "m93", date: "06 jul", from: ["m83", "m84"] },
   { id: "m94", date: "06 jul", from: ["m81", "m82"] },
