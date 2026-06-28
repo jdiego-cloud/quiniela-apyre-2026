@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { redis, slugify } from "@/lib/redis";
+import { supabase, slugify } from "@/lib/supabase";
 import { ParticipantState } from "@/lib/bracket-data";
 
 export async function GET(
@@ -8,11 +8,23 @@ export async function GET(
 ) {
   const { name } = await params;
   const slug = slugify(name);
-  const data = await redis.get<ParticipantState>(`participant:${slug}`);
+
+  const { data, error } = await supabase
+    .from("participants")
+    .select("name, predictions")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
   if (!data) {
     return NextResponse.json({ found: false }, { status: 200 });
   }
-  return NextResponse.json({ found: true, state: data });
+  return NextResponse.json({
+    found: true,
+    state: { name: data.name, predictions: data.predictions } as ParticipantState,
+  });
 }
 
 export async function POST(
@@ -27,15 +39,16 @@ export async function POST(
     return NextResponse.json({ error: "Nombre inválido" }, { status: 400 });
   }
 
-  const stateToSave: ParticipantState = {
+  const { error } = await supabase.from("participants").upsert({
+    slug,
     name: body.name,
     predictions: body.predictions || {},
-    updatedAt: Date.now(),
-  };
+    updated_at: new Date().toISOString(),
+  });
 
-  await redis.set(`participant:${slug}`, stateToSave);
-  // Keep an index of all participant slugs for admin views
-  await redis.sadd("participant-index", slug);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }
