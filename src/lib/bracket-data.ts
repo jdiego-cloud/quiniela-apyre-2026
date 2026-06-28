@@ -9,6 +9,7 @@ export interface DependentMatch {
   id: string;
   date: string;
   from: [string, string];
+  useLoser?: boolean;
 }
 
 export interface RoundMeta {
@@ -59,7 +60,7 @@ export const SEMIS: DependentMatch[] = [
   { id: "m102", date: "15 jul", from: ["m99", "m100"] },
 ];
 
-export const THIRD: DependentMatch = { id: "m3rd", date: "18 jul", from: ["m101", "m102"] };
+export const THIRD: DependentMatch = { id: "m3rd", date: "18 jul", from: ["m101", "m102"], useLoser: true };
 export const FINAL: DependentMatch = { id: "final", date: "19 jul", from: ["m101", "m102"] };
 
 export const ROUND_ORDER: { meta: RoundMeta; matches: (Round32Match | DependentMatch)[] }[] = [
