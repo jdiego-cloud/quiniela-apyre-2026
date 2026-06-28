@@ -49,24 +49,48 @@ export default function BracketPage() {
     [predictions]
   );
 
+  const getLoserName = useCallback(
+    (matchId: string): string | null => {
+      const pred = predictions[matchId];
+      if (!pred || !pred.winner) return null;
+      const round = ROUND_ORDER.flatMap((r) => r.matches).find((m) => m.id === matchId);
+      if (!round) return null;
+      if (isRound32(round)) {
+        return pred.winner === "local" ? round.visitante : round.local;
+      } else {
+        const [idA, idB] = round.from;
+        const nameA = getWinnerName(idA);
+        const nameB = getWinnerName(idB);
+        return pred.winner === "local" ? nameB : nameA;
+      }
+    },
+    [predictions]
+  );
+
   const getTeamsForMatch = useCallback(
     (match: Round32Match | DependentMatch): { local: string | null; visit: string | null } => {
       if (isRound32(match)) {
         return { local: match.local, visit: match.visitante };
       }
       const [idA, idB] = match.from;
+      if (match.useLoser) {
+        return { local: getLoserName(idA), visit: getLoserName(idB) };
+      }
       return { local: getWinnerName(idA), visit: getWinnerName(idB) };
     },
-    [getWinnerName]
+    [getWinnerName, getLoserName]
   );
 
   const isMatchReady = useCallback(
     (match: Round32Match | DependentMatch): boolean => {
       if (isRound32(match)) return true;
       const [idA, idB] = match.from;
+      if (match.useLoser) {
+        return !!getLoserName(idA) && !!getLoserName(idB);
+      }
       return !!getWinnerName(idA) && !!getWinnerName(idB);
     },
-    [getWinnerName]
+    [getWinnerName, getLoserName]
   );
 
   async function loadParticipant(n: string) {
@@ -116,13 +140,18 @@ export default function BracketPage() {
     setPredictions((prev) => {
       const p: MatchPrediction = { ...(prev[matchId] || {}) };
       p[field] = value;
-      const l = parseInt(p.local ?? "");
-      const v = parseInt(p.visit ?? "");
+      const lStr = p.local ?? "";
+      const vStr = p.visit ?? "";
+      const l = lStr === "" ? NaN : parseInt(lStr, 10);
+      const v = vStr === "" ? NaN : parseInt(vStr, 10);
       if (!isNaN(l) && !isNaN(v) && l !== v) {
         p.winner = l > v ? "local" : "visit";
         p.penaltyWinner = undefined;
       } else if (!isNaN(l) && !isNaN(v) && l === v) {
         p.winner = p.penaltyWinner;
+      } else {
+        p.winner = undefined;
+        p.penaltyWinner = undefined;
       }
       return { ...prev, [matchId]: p };
     });
