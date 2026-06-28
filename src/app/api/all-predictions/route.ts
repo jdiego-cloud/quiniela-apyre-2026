@@ -1,16 +1,21 @@
 import { NextResponse } from "next/server";
-import { redis } from "@/lib/redis";
+import { supabase } from "@/lib/supabase";
 import { ParticipantState } from "@/lib/bracket-data";
 
 export async function GET() {
-  const slugs = await redis.smembers("participant-index");
-  if (!slugs || slugs.length === 0) {
-    return NextResponse.json({ participants: [] });
+  const { data, error } = await supabase
+    .from("participants")
+    .select("name, predictions")
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const keys = slugs.map((s) => `participant:${s}`);
-  const results = await redis.mget<ParticipantState[]>(...keys);
+  const participants: ParticipantState[] = (data || []).map((row) => ({
+    name: row.name,
+    predictions: row.predictions,
+  }));
 
-  const participants = results.filter(Boolean);
   return NextResponse.json({ participants });
 }
